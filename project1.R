@@ -1,0 +1,520 @@
+#project one : Razia Hadya Khaliqi
+setwd("C:/Users/hp/Desktop/All auaf courses/spring 2024/data mining/dataMining")
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+## part1 prediction of y based on features x (using numeric variables)
+##Predicting the price of A Diamond based on depth, and table features 
+#so our y is price and the predictors x, x2,x3 are (depth, table)
+
+
+#Step 1: check their correlation 
+x.sub=data.frame(x$price, x$depth, x$table)
+head(x.sub)
+View(x.sub)
+
+x.cor=cor(x.sub)   #correlation matrix
+x.cor # here we can see that the correlation between price and table is higher so for this 
+# reason we choose the tabel as a first model variable 
+
+library(corrplot)
+
+corrplot(x.cor, method = "pie", 
+         type="lower")
+
+##Step 2: now we devide the data in to training and test 
+
+nrow(x)
+0.7*53940
+
+s=sample(nrow(x), 37758) # we devide the data in to two catagory training and test. the training data set contains 07 percent 
+# of whole data while the remaining is test data set
+s
+x.train=x[s,]   #Training dataset 
+View(x.train)
+
+x.test=x[-s,]    #test dataset
+View(x.test)
+
+
+#Step 3: Construct the prediction models using x.train 
+
+#Step 3.1. Model 0
+#Regression and Prediction  Y: price   X: table
+names(x.train)
+#here we predicting the price of a diamond based on table features that specific diamond have
+cor(x.train$price, x.train$x)
+plot(x.train$x, x.train$price, 
+     col='blue')
+
+# now we make a prediction
+#Y=price 
+#X=table
+
+lm0=lm(price~x, data = x.train)
+
+#Generat the predicted values for price using the model
+y.pred=lm0$fitted.values   #we made predictions 
+y.pred
+
+
+all.y=data.frame(x.train$price, y.pred)
+View(all.y)
+
+
+#now we created model 0 from training data set and now we want to use this model to predict test data set
+
+lm0.test=predict(lm0, x.test)
+lm0.test  
+y.test=data.frame(x.test$price, lm0.test,x.test$price-lm0.test)
+View(y.test)
+
+#sum(y.test$x.test.price...lm0.test)
+
+##Sum of Squared Error
+
+SSE0=sum((x.test$price - lm0.test)^2)
+SSE0   #16182/63403559017 ==>2.5522226592455514175919623991602e-7 here we can see that the sum of squared error is 18 for price and x
+#lets check another variable and see how much is the SSE0
+
+#Step 4: y
+#Add another variable
+
+lm1=lm(price~y, data = x.train)   #Construct the model Model1
+
+lm1.test=predict(lm1, x.test)
+lm1.test
+SSE1=sum((x.test$price- lm1.test)^2)
+SSE1  #16182/88356063031 = 1.8314532636342675072262749787299e-7 here we can see that the sse is very small for y 
+
+#lets add another variable and check the sse and then we can decide which model is the 
+#best model
+
+lm2=lm(price~z, data = x.train)   #Construct the model Model2 using z
+
+lm2.test=predict(lm2, x.test)
+lm2.test
+SSE2=sum((x.test$price- lm2.test)^2)
+SSE2  #16182/ 61490248344 = 2.6316367937679637093644586370611e-7here we can see that the sse for z and price is really high
+# from this analysis we can decide that the best model is price and table 
+# which means the diamond which has a higher table features are more expensive. 
+
+
+# ******************************************************************************
+# ******************************************************************************
+# ## part2 classification of binary y based on features x (using catagorical variables)
+# logistic regration classification
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+library(dplyr)
+
+nrow(x)
+0.7*53940
+s=sample(nrow(x),  37758)
+x.train=x[s,]
+x.test=x[-s,]
+###Model 0
+L.m0=glm(cutCode~price, family = "binomial", data = x.train)
+x.fit=fitted(L.m0, x.train)
+x.fit
+plot(x.train$price, x.fit, col="blue", pch=12)
+
+###Make predication with the model 
+m0_pr=predict(L.m0, x.test)
+m0_pr
+cl0_pr=ifelse(m0_pr>0.5, 1, 0)   #dummy variable
+table(x.test$cutCode, cl0_pr)   #confussion matrix
+
+#er
+plot(x.test$price, x.test$cutCode, col='yellow', pch=16)
+points(x.test$cutCode, cl0_pr, col='green', lwd=3)
+
+
+###Model 1
+names(x)
+L.m1=glm(cutCode~x, family = "binomial", data = x.train)
+
+m1.pr.train=fitted(L.m1, x.train)
+#summary(m1.pr.train)
+plot(x.train$x, m1.pr.train, col="blue", pch=12)
+
+###Make predication with the model 
+m1_pr=predict(L.m1, x.test)
+cl1_pr=ifelse(m1_pr>0.5, 1, 0)
+table(x.test$cutCode, cl1_pr)
+##error rate
+
+plot(x.test$x, x.test$cutCode, col='red', pch=16)
+points(x.test$price, cl1_pr, col='green', lwd=3)
+
+## >> choose model
+
+
+##New data 
+price.new=data.frame(price=c(320, 326, 360))
+cl_pred_new=predict(L.m0, price.new)
+cl_pred_new
+class_new=ifelse(cl_pred_new>0.5, 1, 0)
+class_new
+
+##linear classification
+#problem:::predict the quality of A diamond based on cut (one of the diamonds qaulity marker)
+#whether they go to premium (high quality) or not
+
+#Y=cut [premium=1. others=0]
+#X=depth, table, carat
+
+nrow(x)
+0.7*53940
+
+s=sample(nrow(x), 37758)
+
+x.train=x[s,]
+x.test=x[-s,]
+
+View(x.train)
+#model 0
+m0=lm(cutCode~depth, data=x.train)
+
+View(x.test)
+m0_pr=predict(m0, x.test)
+m0_pr
+
+depth_pred=ifelse(m0_pr>0.5, 1, 0)   ##to create a dummy variable
+depth_pred
+x.test$cutCode
+
+table(x.test$cutCode, depth_pred)   #confussion matrix
+##wrog classifications 4248/16182=0.26%      Error Rate
+plot(x.test$depth, x.test$cutCode, col='red', pch=16)
+points(x.test$depth, depth_pred, col='green', lwd=3)
+
+
+names(x)
+###Model 1
+m1=lm(cutCode~table, data=x.train)
+m1_pr=predict(m1, x.test)
+m1_pr
+depth_pred1=ifelse(m1_pr>0.5, 1, 0)
+depth_pred1
+#ms_pred1
+##plot(x.test$table, m1_pr)
+table(x.test$cutCode, depth_pred1)
+###Error rate= 4547/61618=0.073
+plot(x.test$table, x.test$cutCode, col='red', pch=16)
+points(x.test$depth, depth_pred1, col='green', lwd=3)
+
+###Suppose we choose model 1 how we use this for the new data
+table.new=data.frame(table=c(60.0, 90.0, 57.0))
+pr_new_data=predict(m1, table.new)
+pr_new_data
+cl_new_data=ifelse(pr_new_data>0.5, 1,0)
+cl_new_data
+
+
+
+##KNN classification
+#Problem: predict whether a new diamond belogs to preium quality or Not
+#using their carat and depth and table 
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+###create predictor matrix and classification matrix
+x.a=x[,c(1,6,7)]
+head(x.a)
+
+x.y=x[,2] # we put the cutcode which specifies whether the diamond is premium or not 
+# in this data set(1= premium, 0=not premium)
+head(x.y)
+####Split the dataset
+
+s=sample(nrow(x), floor(0.8*nrow(x)))
+x.train=x.a[s, ]
+x.test=x.a[-s, ]
+
+train.y=x.y[s]
+head(train.y)
+test.y=x.y[-s]
+NROW(train.y)
+
+###Specify k
+sqrt(nrow(x))  ###k=231 better to be odd
+install.packages("class")
+library(class)
+
+x.knn= knn(train = x.train, test = x.test, cl = train.y, k=231)
+table(x.knn)  #predicted by knn
+table(test.y)   #actual data
+x.pr=data.frame(x.test$cutCode, x.test$carat, test.y, x.knn)
+View(x.pr)
+##Confusion matrix
+table(test.y, x.knn)
+
+err.knn= 1813/NROW(test.y)
+err.knn # 0.16
+## adding the new data based on first model 
+carat=c(92, 89, 78, 91, 80)
+depth=c(98, 70, 60, 93, 60)
+table=c(92, 89, 78, 91, 80)
+###where Knn would classify them 
+pre.new=data.frame(cbind(carat, depth, table))
+
+pre.new
+
+x.knn1=knn(train = x.train, test = pre.new, cl = train.y, k=231)
+x.knn1
+table(x.knn1)
+
+## ANN (artificial neural network) classification 
+#problem: classify the diamond quality(cut) whether it is premium or not 
+#using the depth and table attributes 
+d = read.csv("diamonds.csv")
+View(d)
+head(d)
+names(d)
+dim(d)
+x=data.frame(d$depth, d$table, d$cutCode)## here we made a data set which contains only this three attribute
+colnames(x)=c("depth", "table", "cutCode")
+head(x)
+#Split the dataset x into training and test
+
+s=sample(nrow(x), floor(0.8*nrow(x)))
+x.train=x[s, ]## train data set 
+x.test=x[-s, -3] ## 
+x.test.y=x[-s, 3]
+head(x.test)
+head(x.test.y)
+
+##Run the ANN classification Model
+library(neuralnet)
+nn=neuralnet(cutCode~table+depth, data =x.train, hidden = 1,
+             act.fct = "logistic", linear.output = FALSE)
+plot(nn)
+
+##help("neuralnet")
+##Compute the error rate using test dataset 
+pr.test=compute(nn, x.test)
+
+p1=pr.test$net.result
+head(p1)
+
+head(p1)
+pred=ifelse(p1>0.5, 1, 0)  ###dummy variable
+pred
+table(x.test.y, pred)   ##confussion matrix
+
+Err.rate=8049/NROW(x.test)
+Err.rate ###0.7461068
+
+###Use the ANN model to classify new diamond's quality
+
+table=c(94, 89, 60)
+depth=c(97, 88, 70)
+
+new.st=data.frame(cbind(table, depth))
+head(new.st)
+pr.test=compute(nn, new.st)
+
+p1=pr.test$net.result
+
+pred0=ifelse(p1>0.5, 1, 0)  ##dummay variable
+pred0
+
+
+#********************************************************************************
+#********************************************************************************
+
+## DT classification
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+
+install.packages("rpart")
+install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+#Problem
+#predict the qaulity of diamond based on whether it is premium or others
+x_sub=data.frame(x$depth,x$table, x$cutCod)
+colnames(x_sub)=c("depth","table", "cutCode")
+head(x_sub)
+##Split the dataset into train and test
+s=sample(nrow(x_sub), floor(0.8*nrow(x_sub)))
+x.train=x_sub[s, ]
+x.test=x_sub[-s,]
+#head(g.train)
+#head(g.test)
+fit=rpart(cutCode~., data = x.train, method = "class")
+rpart.plot(fit, extra = 106)
+pred=predict(fit, x.test, type = "class")
+head(pred)
+table(x.test$cutCode, pred) #confusion matrix
+Err.rate=4/NROW(x.test)
+Err.rate #0.0003707824
+
+help("rpart")
+####New Dataset
+depth=c(89, 80, 30)
+table=c(88, 70, 90)
+new.st=data.frame(cbind(depth, table))
+pred.new=predict(fit, new.st, type = "class")
+pred.new
+
+
+###Regression Tree
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+d.sub=x[,c(8,6,7)]
+head(d.sub)
+s=sample(nrow(d.sub), floor(0.7*nrow(d.sub)))
+g.train=d.sub[s, ]
+g.test=d.sub[-s,]
+g.test=d.sub[-s,]
+mean(g.train$price)
+
+plot(g.train$price, g.train$depth)
+abline(v=29, col="red", lty=2)
+abline(v=14, col="blue", lty=3)
+abline(v=18, col="green", lty=3)
+abline(v=42, col="darkgreen", lty=3)
+
+fit=rpart(price~., data = g.train, method = "anova")
+
+rpart.plot(fit)
+summary(fit)
+
+predict_test=predict(fit, g.test)
+View(predict_test)
+
+
+g.test=cbind(g.test, predict_test)
+View(g.test)
+er=abs(g.test$table-g.test$predict_test)
+sum(er)
+
+###############
+###classification
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+library(rpart)
+library(rpart.plot)
+#Problem
+#predict the quality of diamond whether it is premium or not 
+g_sub=data.frame(x$cutCode, x$depth, x$table)
+colnames(g_sub)=c("cutCode", "depth", "table")
+head(g_sub)
+##Split the dataset into train and test
+s=sample(nrow(g_sub), floor(0.8*nrow(g_sub)))
+g.train=g_sub[s, ]
+g.test=g_sub[-s,]
+#head(g.train)
+#head(g.test)
+fit=rpart(cutCode~., data = g.train, method = "class")
+rpart.plot(fit, extra = 106)
+pred=predict(fit, g.test, type = "class")
+head(pred)
+table(g.test$cutCode , pred)
+Err.rate=1870/NROW(g.test)
+Err.rate #0.1733407
+
+help("rpart")
+####New Dataset
+Q=c(89, 80, 30)
+Oral=c(88, 70, 90)
+new.st=data.frame(cbind(depth, table))
+pred.new=predict(fit, new.st, type = "class")
+pred.new
+
+##############**********************########****************#####*
+
+#Random Forest Model
+#Load the packages
+install.packages("randomForest")
+library(dplyr)
+library(randomForest)
+library(ggplot2)
+
+####+++++++++++++
+#1. random forest classification
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+##rfdata=x
+####str(rfdata)
+
+#Y: cutcode
+#X: depth
+
+#Train and test
+s=sample(nrow(x), floor(0.7*nrow(x)))
+
+#Training and test
+rftrain=x[s,]
+rftest=x[-s,]
+
+names(rftrain)
+#random forest model
+rfm=randomForest(cutCode~., data = rftrain)
+
+#Make prediction 
+spredict=predict(rfm, rftest)
+
+#Confusion matrix
+cm=table(rftest$cutCode, spredict)
+cm
+cac=sum(diag(cm))/sum(cm)
+cac
+
+
+####+++++++++++++
+#2. random forest Regression
+x = read.csv("diamonds.csv")
+View(x)
+head(x)
+names(x)
+dim(x)
+install.packages("randomForest")
+library(randomForest)
+library(ggplot2)
+#RF Model
+x_r = x[7:8]
+x_r
+rfrm=randomForest(x=x_r[1],
+                  y=x_r$price)
+plot(rfrm)
+min(rfrm$mse)
+#Predict
+y_pre=predict(rfrm, newdata = data.frame(table=30))
+
+#plot using ggplot2
+x_grid=seq(min(x_r$table), max(x_r$table), 0.01)
+
+g=ggplot()+
+  geom_point(aes(x=x_r$table, y=px_r$price), colour = "red")+
+  geom_line(aes(x=x_grid, y=predict(rfrm, newdata =data.frame(table=x_grid))), colour = 'blue')+
+  ggtitle("table vs price")+
+  ylab("price")+
+  xlab("table")
+g
+
+
+
+
+
